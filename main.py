@@ -24,6 +24,15 @@ class Cards:
         self.shuffle_cards()
         #print("Shuffled cards on init!")
 
+
+    def inv_deck_count(self) -> bool:
+        if len(self.deck_list) <= 0:
+            error("Cannot start a new scopa round! Invalid or low card count for deck!")
+            return True
+
+        return False
+
+
     def shuffle_cards(self) -> None:
         random.shuffle(self.deck_list)
 
@@ -66,9 +75,7 @@ class Table(Cards):
         for _ in range(self.rnd_card_amount):
             self.table_cards.append(self.draw_card())
 
-    def debug_table_cards(self) -> None:
-        """ Logs table cards """
-
+    def show_table_cards(self) -> None:
         print(f"\nTable cards: {', '.join(self.table_cards)}\n")
 
 
@@ -128,7 +135,6 @@ class Player(Cards):
         for card in cards:
             if card not in self.table_captures:
                 self.table_captures.append(card)
-                self.card_amount += 1
 
     def capture_to_hand(self, cards: list[str]) -> None:
         if not self.is_hand_captures: return
@@ -142,29 +148,76 @@ class Player(Cards):
         """ Logs card amount and cards """
 
         print(f"{self.name} card amount: {len(self.plr_cards)}")
-        print(f"{self.name} cards: {self.plr_cards}")
+        print(f"{self.name} cards: {", ".join(self.plr_cards)}")
         print("")
 
 
-def main() -> None:
-    cards = Cards()
-    cards.debug_cards()
+class Scopa(Cards):
+    """
+    Debug scopa with existing class method or using the instance vars
+    """
 
-    table_cards = Table("Test")
-    table_cards.debug_table_cards()
+    def __post_init__(self) -> None:
+        super().__post_init__() 
+        
+        for card in self.deck_list[:]: # Init workaround
+            if ("8" in card or "9" in card or "10" in card):
+                #print("Removing:", card)
+                self.deck_list.remove(card)
+
+
+    def inv_plr_card_count(self, plr: Player) -> bool:
+        if len(plr.plr_cards) > 0:
+            error(f"Cannot start a new scopa round! Non-zero card count for {plr.name}!")
+            return True
+
+        return False
+
+    def new_round(self, players: list[Player]) -> None:
+        """
+        Starts a new round (a new hand to each player given)
+
+        -----
+        Errors, if you cannot start a new scopa round
+        """
+
+        if self.inv_deck_count(): return
+
+        for plr in players:
+            if self.inv_plr_card_count(plr): return
+
+            plr.new_hand()
+
+    
+    def game_loop(self, players: list[Player], table: Table) -> None:
+        """ table - The same table players play at """
+
+        while True:
+            for plr in players:
+                if len(plr.plr_cards) > 0:
+                    plr.put_card(table) 
+                else:
+                    self.new_round(players)
+
+
+def main() -> None:
+    scopa_deck = Scopa()
+    #scopa_deck.debug_cards()
+
+    table = Table("Test")
+    table.show_table_cards()
     #print(table_cards)
 
     player_1 = Player("Player 1", is_table_captures=True)
-    player_1.debug_plr()
+    #player_1.debug_plr()
 
     player_2 = Player("Player 2", is_table_captures=True)
-    player_2.debug_plr()
+    #player_2.debug_plr()
 
-    player_1.put_card(table_cards)
-    player_1.debug_plr()
-
-    player_2.put_card(table_cards)
-    player_2.debug_plr()
+    scopa_deck.game_loop(
+        players=[player_1, player_2],
+        table=table
+    )
 
 
 if __name__ == "__main__":
