@@ -2,6 +2,7 @@ import random
 from dataclasses import dataclass
 
 from personal_logging.main import error, warn
+import questionary
 
 
 @dataclass
@@ -80,7 +81,6 @@ class Player(Cards):
 
     name: str = ""
 
-    card_amount: int = 0
     new_hand_amount: int = 3
 
     is_table_captures: bool = False
@@ -103,14 +103,19 @@ class Player(Cards):
         self.new_hand()
 
     def new_hand(self) -> None:
-        self.card_amount += self.new_hand_amount
-
         for _ in range(self.new_hand_amount):
             self.plr_cards.append(random.choice(self.deck_list))
 
-    def put_card(self, card: str) -> None:
+    def put_card(self, table: Table) -> None:
+        """ Asks and handles which card to put on given table """
+
+        card = questionary.select(
+                f"{self.name}: card to put on table: ",
+                self.plr_cards
+        ).ask()
+
         self.plr_cards.remove(card)
-        self.card_amount -= 1
+        table.table_cards.append(card)
 
 
     def capture_left_on_table(self, cards: list[str]) -> None:
@@ -127,13 +132,12 @@ class Player(Cards):
         for card in cards:
             if card not in self.plr_cards:
                 self.plr_cards.append(card)
-                self.card_amount += 1
 
 
     def debug_plr(self) -> None:
         """ Logs card amount and cards """
 
-        print(f"{self.name} card amount: {self.card_amount}")
+        print(f"{self.name} card amount: {len(self.plr_cards)}")
         print(f"{self.name} cards: {self.plr_cards}")
         print("")
 
@@ -152,10 +156,10 @@ def main() -> None:
     player_2 = Player("Player 2", is_table_captures=True)
     player_2.debug_plr()
 
-    player_1.put_card(player_1.plr_cards[0])
+    player_1.put_card(table_cards)
     player_1.debug_plr()
 
-    player_2.put_card(player_2.plr_cards[0])
+    player_2.put_card(table_cards)
     player_2.debug_plr()
 
 
