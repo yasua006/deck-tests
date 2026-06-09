@@ -25,7 +25,11 @@ class Cards:
         #print("Shuffled cards on init!")
 
     def shuffle_cards(self) -> None:
-        random.shuffle(self.deck)
+        random.shuffle(self.deck_list)
+
+    def draw_card(self) -> str:
+        """ Draws a card from backwards (face down deck) """
+        return self.deck_list.pop()
 
     def debug_cards(self) -> None:
         """
@@ -60,7 +64,7 @@ class Table(Cards):
 
     def put_cards_on_table(self) -> None:
         for _ in range(self.rnd_card_amount):
-            self.table_cards.append(random.choice(self.deck_list))
+            self.table_cards.append(self.draw_card())
 
     def debug_table_cards(self) -> None:
         """ Logs table cards """
@@ -104,7 +108,7 @@ class Player(Cards):
 
     def new_hand(self) -> None:
         for _ in range(self.new_hand_amount):
-            self.plr_cards.append(random.choice(self.deck_list))
+            self.plr_cards.append(self.draw_card())
 
     def put_card(self, table: Table) -> None:
         """ Asks and handles which card to put on given table """
