@@ -47,6 +47,8 @@ class Table(Cards):
     This does not handle stacked cards (cards on top of each other!)
     """
 
+    name: str = ""
+
     rnd_card_amount: int = 4
     """ The card amount to put on the table using the deck """
 
@@ -56,10 +58,11 @@ class Table(Cards):
         self.put_cards_on_table()
 
     def put_cards_on_table(self) -> None:
-        self.table_cards = random.choices(self.deck_list, k=self.rnd_card_amount)
+        for _ in range(self.rnd_card_amount):
+            self.table_cards.append(random.choice(self.deck_list))
 
     def debug_table_cards(self) -> None:
-        print(f"Table cards: {', '.join(self.table_cards)}")
+        print(f"\nTable cards: {', '.join(self.table_cards)}\n")
 
 
 @dataclass
@@ -80,18 +83,25 @@ class Player(Cards):
 
     def new_hand(self) -> None:
         self.card_amount += self.new_hand_amount
-        self.plr_cards.append(random.choices(self.deck_list, k=self.new_hand_amount))
+
+        for _ in range(self.new_hand_amount):
+            self.plr_cards.append(random.choice(self.deck_list))
+
+    def put_card(self, card: str) -> None:
+        self.plr_cards.remove(card)
+        self.card_amount -= 1
 
     def debug_plr(self) -> None:
         print(f"{self.name} card amount: {self.card_amount}")
         print(f"{self.name} cards: {self.plr_cards}")
+        print("")
         
 
 def main() -> None:
     cards = Cards()
     cards.debug_cards()
 
-    table_cards = Table()
+    table_cards = Table("Test")
     table_cards.debug_table_cards()
     #print(table_cards)
 
@@ -99,6 +109,12 @@ def main() -> None:
     player_1.debug_plr()
 
     player_2 = Player("Player 2")
+    player_2.debug_plr()
+
+    player_1.put_card(player_1.plr_cards[0])
+    player_1.debug_plr()
+
+    player_2.put_card(player_2.plr_cards[0])
     player_2.debug_plr()
 
 if __name__ == "__main__":
