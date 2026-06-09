@@ -71,7 +71,7 @@ class Table(Cards):
 class Player(Cards):
     """
     New hand on init
-    Captures disabled by default
+    Captures are disabled by default
     Debug the player with existing class method or using the instance vars
 
     -----
@@ -117,15 +117,17 @@ class Player(Cards):
         if not self.is_table_captures: return
 
         for card in cards:
-            self.table_captures.append(card)
-            self.card_amount += 1
+            if card not in self.table_captures:
+                self.table_captures.append(card)
+                self.card_amount += 1
 
     def capture_to_hand(self, cards: list[str]) -> None:
         if not self.is_hand_captures: return
 
         for card in cards:
-            self.plr_cards.append(card)
-            self.card_amount += 1
+            if card not in self.plr_cards:
+                self.plr_cards.append(card)
+                self.card_amount += 1
 
 
     def debug_plr(self) -> None:
