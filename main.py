@@ -1,7 +1,7 @@
 import random
 from dataclasses import dataclass
 
-from personal_logging.main import warn
+from personal_logging.main import error, warn
 
 
 @dataclass
@@ -62,6 +62,8 @@ class Table(Cards):
             self.table_cards.append(random.choice(self.deck_list))
 
     def debug_table_cards(self) -> None:
+        """ Logs table cards """
+
         print(f"\nTable cards: {', '.join(self.table_cards)}\n")
 
 
@@ -69,16 +71,35 @@ class Table(Cards):
 class Player(Cards):
     """
     New hand on init
+    Captures disabled by default
     Debug the player with existing class method or using the instance vars
+
+    -----
+    Errors, if both capture booleans are set to True
     """
 
     name: str = ""
+
     card_amount: int = 0
     new_hand_amount: int = 3
 
+    is_table_captures: bool = False
+    """ Allows captures left on the table face down """
+    is_hand_captures: bool = False
+    """ Allows captures incrementing player card(s)"""
+
     def __post_init__(self) -> None:
         super().__post_init__()
+
+        if self.is_table_captures and self.is_hand_captures:
+            error("Player cannot capture both ways: table and hand!")
+            return
+
         self.plr_cards: list[str] = []
+
+        if self.is_table_captures:
+            self.table_captures = []
+
         self.new_hand()
 
     def new_hand(self) -> None:
@@ -91,11 +112,29 @@ class Player(Cards):
         self.plr_cards.remove(card)
         self.card_amount -= 1
 
+
+    def capture_left_on_table(self, cards: list[str]) -> None:
+        if not self.is_table_captures: return
+
+        for card in cards:
+            self.table_captures.append(card)
+            self.card_amount += 1
+
+    def capture_to_hand(self, cards: list[str]) -> None:
+        if not self.is_hand_captures: return
+
+        for card in cards:
+            self.plr_cards.append(card)
+            self.card_amount += 1
+
+
     def debug_plr(self) -> None:
+        """ Logs card amount and cards """
+
         print(f"{self.name} card amount: {self.card_amount}")
         print(f"{self.name} cards: {self.plr_cards}")
         print("")
-        
+
 
 def main() -> None:
     cards = Cards()
@@ -105,10 +144,10 @@ def main() -> None:
     table_cards.debug_table_cards()
     #print(table_cards)
 
-    player_1 = Player("Player 1")
+    player_1 = Player("Player 1", is_table_captures=True)
     player_1.debug_plr()
 
-    player_2 = Player("Player 2")
+    player_2 = Player("Player 2", is_table_captures=True)
     player_2.debug_plr()
 
     player_1.put_card(player_1.plr_cards[0])
@@ -116,6 +155,7 @@ def main() -> None:
 
     player_2.put_card(player_2.plr_cards[0])
     player_2.debug_plr()
+
 
 if __name__ == "__main__":
     main()
