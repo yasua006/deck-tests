@@ -97,9 +97,9 @@ class Player(Cards):
     new_hand_amount: int = 3
 
     is_table_captures: bool = False
-    """ Allows captures left on the table face down """
+    """ Captures are left on the table face down """
     is_hand_captures: bool = False
-    """ Allows captures incrementing player card(s)"""
+    """ Captures increment player card(s)"""
 
     def __post_init__(self) -> None:
         super().__post_init__()
