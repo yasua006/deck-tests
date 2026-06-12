@@ -54,7 +54,7 @@ class Cards:
 
 
 @dataclass
-class Table(Cards):
+class Table:
     """
     Table cards exist on init
     Debug table cards with existing class method or using the instance vars
@@ -69,20 +69,14 @@ class Table(Cards):
     """ The card amount to put on the table using the deck """
 
     def __post_init__(self) -> None:
-        super().__post_init__()
         self.table_cards: list[str] = []
-        self.put_cards_on_table()
-
-    def put_cards_on_table(self) -> None:
-        for _ in range(self.rnd_card_amount):
-            self.table_cards.append(self.draw_card())
 
     def show_table_cards(self) -> None:
         print(f"\nTable cards: {', '.join(self.table_cards)}\n")
 
 
 @dataclass
-class Player(Cards):
+class Player:
     """
     New hand on init
     Captures are disabled by default
@@ -92,8 +86,8 @@ class Player(Cards):
     Errors, if both capture booleans are set to True
     """
 
-    name: str = ""
-
+    name: str
+    deck: Cards
     new_hand_amount: int = 3
 
     is_table_captures: bool = False
@@ -102,8 +96,6 @@ class Player(Cards):
     """ Captures increment player card(s)"""
 
     def __post_init__(self) -> None:
-        super().__post_init__()
-
         if self.is_table_captures and self.is_hand_captures:
             error("Player cannot capture both ways: table and hand!")
             return
@@ -117,7 +109,7 @@ class Player(Cards):
 
     def new_hand(self) -> None:
         for _ in range(self.new_hand_amount):
-            self.plr_cards.append(self.draw_card())
+            self.plr_cards.append(self.deck.draw_card())
 
     def put_card(self, table: Table) -> None:
         """ Asks and handles which card to put on given table """
@@ -154,18 +146,28 @@ class Player(Cards):
         print("")
 
 
-class Scopa(Cards):
+@dataclass
+class Scopa:
     """
+    Creates both a deck and a table on init
+    Puts cards on the table on init
     Debug scopa with existing class methods or using the instance vars
     """
 
     def __post_init__(self) -> None:
-        super().__post_init__() 
-        
-        for card in self.deck_list[:]: # Init workaround
+        self.deck = Cards()
+        self.table = Table()
+
+        for card in self.deck.deck_list[:]: # Init workaround
             if ("8" in card or "9" in card or "10" in card):
                 #print("Removing:", card)
-                self.deck_list.remove(card)
+                self.deck.deck_list.remove(card)
+
+        self.put_cards_on_table()
+
+    def put_cards_on_table(self) -> None:
+        for _ in range(self.table.rnd_card_amount):
+            self.table.table_cards.append(self.deck.draw_card())
 
 
     def inv_plr_card_count(self, plr: Player) -> bool:
@@ -183,7 +185,7 @@ class Scopa(Cards):
         Errors, if you cannot start a new scopa round
         """
 
-        if self.inv_deck_count(): return
+        if self.deck.inv_deck_count(): return
 
         for plr in players:
             if self.inv_plr_card_count(plr): return
@@ -191,19 +193,19 @@ class Scopa(Cards):
             plr.new_hand()
 
     
-    def game_loop(self, players: list[Player], table: Table) -> None:
+    def game_loop(self, players: list[Player]) -> None:
         """ table - The same table players play at """
 
         #while not self.inv_deck_count():
 
-        for _ in range(len(self.deck_list)):
+        for _ in range(len(self.deck.deck_list)):
             #warn(f"Attempt: {i}")
 
-            table.show_table_cards()
+            self.table.show_table_cards()
 
             for plr in players:
                 if len(plr.plr_cards) > 0:
-                    plr.put_card(table) 
+                    plr.put_card(self.table) 
                 else:
                     self.new_round(players)
 
