@@ -262,6 +262,8 @@ class Go_Fish:
                     else:
                         self.__clear_output()
 
+                        matching_rank: str = ""
+
                         # block a non-matching rank selection
                         while True:
                             if wish_rank != matching_rank:
@@ -278,4 +280,5 @@ class Go_Fish:
                                 if wish_rank == matching_rank:
                                     print(f"{selected_plr_name} gave you: {answer_from_other_plr}")
                                     plr.capture_to_hand([answer_from_other_plr])
+                                    selected_plr_class.plr_cards.remove(answer_from_other_plr)
                                     break
