@@ -235,8 +235,9 @@ class Go_Fish:
 
             for plr in players:
                 if len(plr.plr_cards) > 0:
+                    print(f"Current player: {plr.name}")
                     wish_card = questionary.select(
-                            "Ask for a card rank:",
+                            "What card do you want to ask for?",
                             plr.plr_cards
                     ).ask()
 
@@ -268,7 +269,7 @@ class Go_Fish:
                             break
                     
                     if not match_found:
-                        print("Fish!")
+                        print(f"{selected_plr_name}: Go 🐟!")
                         sleep(3)
 
                         new_card: str = self.deck.draw_card()
@@ -285,7 +286,7 @@ class Go_Fish:
                         while True:
                             if wish_rank != matching_rank:
                                 answer_from_other_plr = questionary.select(
-                                        f"Select a card to give for matching card rank: {wish_card}",
+                                        f"You have what {plr.name} asked for. Please select it: {wish_rank}",
                                         selected_plr_class.plr_cards
                                 ).ask()
 
