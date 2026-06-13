@@ -164,7 +164,6 @@ class Go_Fish:
     -----
     Missing:
     Player new hand amount int handling
-    Set handling
     Win / lose state handling
     
     -----
@@ -199,12 +198,30 @@ class Go_Fish:
             os.system("clear")
 
 
+    def __handle_completed_sets(self, players: list[Player]) -> list[str]:
+        ranks: list[str] = [
+            "A",
+            "2", "3", "4", "5", "6", "7", "8", "9", "10",
+            "J",
+            "Q",
+            "K"
+        ]
+        completed_sets: list[str] = []
+
+        for plr in players:
+            for rank in ranks:
+                if sum(card.endswith(rank) for card in plr.plr_cards) == 4:
+                    print(f"{plr.name} completed '{rank}' set")
+                    completed_sets.append(rank)
+
+        #print(", ".join(completed_sets) or None)
+        return completed_sets
+
     def game_loop(self, players: list[Player]) -> None:
         """
         Blocks a non-matching rank selection when you have matches available
 
         -----
-        Errors, if is hand captures is False for given players
         Errors, if card count for deck is invalid
         """
 
@@ -282,3 +299,5 @@ class Go_Fish:
                                     plr.capture_to_hand([answer_from_other_plr])
                                     selected_plr_class.plr_cards.remove(answer_from_other_plr)
                                     break
+
+        self.__handle_completed_sets(players)
