@@ -1,5 +1,9 @@
 import random
 from dataclasses import dataclass
+import sys
+import os
+from time import sleep
+import emoji
 
 from personal_logging.main import error, warn
 import questionary
@@ -27,7 +31,7 @@ class Cards:
 
     def inv_deck_count(self) -> bool:
         if len(self.deck_list) <= 0:
-            error("Cannot start a new scopa round! Invalid or low card count for deck!")
+            error("Invalid or low card count for deck!")
             return True
 
         return False
@@ -37,9 +41,15 @@ class Cards:
         random.shuffle(self.deck_list)
 
     def draw_card(self) -> str:
+        """
+        Draws a card from backwards (face down deck)
+
+        -----
+        Returns a string, if you cannot draw a card
+        """
+
         if self.inv_deck_count(): return "Cannot draw a card!"
 
-        """ Draws a card from backwards (face down deck) """
         return self.deck_list.pop()
 
     def debug_cards(self) -> None:
@@ -147,70 +157,125 @@ class Player:
 
 
 @dataclass
-class Scopa:
+class Go_Fish:
     """
+    This version gives a max of one card per rank match
+
+    -----
+    Missing:
+    Player new hand amount int handling
+    Set handling
+    Win / lose state handling
+    
+    -----
     Creates both a deck and a table on init
-    Puts cards on the table on init
-    Debug scopa with existing class methods or using the instance vars
+    Debug go fish with existing class method or using the instance vars
     """
 
     def __post_init__(self) -> None:
         self.deck = Cards()
         self.table = Table()
 
-        for card in self.deck.deck_list[:]: # Init workaround
-            if ("8" in card or "9" in card or "10" in card):
-                #print("Removing:", card)
-                self.deck.deck_list.remove(card)
+    def __inv_is_hand_captures(self, players: list[Player]) -> bool:
+        for plr in players:
+            if not plr.is_hand_captures:
+                error("Cannot play Go Fish with hand captures off!")
+                return True
+            else:
+                return False
+        else: 
+            return False
 
-        self.put_cards_on_table()
 
-    def put_cards_on_table(self) -> None:
-        for _ in range(self.table.rnd_card_amount):
-            self.table.table_cards.append(self.deck.draw_card())
+    def __clear_output(self) -> None:
+        visible_logs_delay: int = 3
+
+        print("Clearing output to prevent cheating...")
+        sleep(visible_logs_delay)
+
+        if sys.platform == "win32":
+            os.system("cls")
+        else:
+            os.system("clear")
 
 
-    def inv_plr_card_count(self, plr: Player) -> bool:
-        if len(plr.plr_cards) > 0:
-            error(f"Cannot start a new scopa round! Non-zero card count for {plr.name}!")
-            return True
-
-        return False
-
-    def new_round(self, players: list[Player]) -> None:
+    def game_loop(self, players: list[Player]) -> None:
         """
-        Starts a new round (a new hand to each player given)
+        Blocks a non-matching rank selection when you have matches available
 
         -----
-        Errors, if you cannot start a new scopa round
+        Errors, if is hand captures is False for given players
+        Errors, if card count for deck is invalid
         """
 
-        if self.deck.inv_deck_count(): return
+        if self.__inv_is_hand_captures(players): return
 
-        for plr in players:
-            if self.inv_plr_card_count(plr): return
+        while True:
+            if self.deck.inv_deck_count():
+                break
 
-            plr.new_hand()
-
-    
-    def game_loop(self, players: list[Player]) -> None:
-        """ table - The same table players play at """
-
-        #while not self.inv_deck_count():
-
-        for _ in range(len(self.deck.deck_list)):
-            #warn(f"Attempt: {i}")
-
-            self.table.show_table_cards()
+            self.__clear_output()
 
             for plr in players:
                 if len(plr.plr_cards) > 0:
-                    plr.put_card(self.table) 
-                else:
-                    self.new_round(players)
+                    wish_card = questionary.select(
+                            "Ask for a card rank:",
+                            plr.plr_cards
+                    ).ask()
 
-    def debug_scopa(self, players: list[Player]) -> None:
-        """ Logs player captures from given players """
+                    other_players: list[Player] = [p for p in players if p != plr]
+                    other_players_name: list[str] = []
 
-        for plr in players:
-            print(f"{plr.name} captures: {plr.table_captures}")
+                    for other_plr in other_players:
+                        other_players_name.append(other_plr.name)
+
+                    selected_plr_name = questionary.select(
+                            "Select a player to ask:",
+                            other_players_name
+                    ).ask()
+
+                    selected_plr_class: Player
+
+                    for other_plr in other_players:
+                        if selected_plr_name == other_plr.name:
+                            selected_plr_class = other_plr
+
+                    wish_rank: str = emoji.replace_emoji(wish_card, "")
+                    match_found: bool = False
+
+                    for card in selected_plr_class.plr_cards:
+                        card_rank = emoji.replace_emoji(card, "")
+
+                        if wish_rank == card_rank:
+                            match_found = True
+                            break
+                    
+                    if not match_found:
+                        print("Fish!")
+                        sleep(3)
+
+                        new_card: str = self.deck.draw_card()
+                        plr.plr_cards.append(new_card)
+
+                        print(f"You pulled: {new_card}")
+                        self.__clear_output()
+                    else:
+                        self.__clear_output()
+
+                        # block a non-matching rank selection
+                        while True:
+                            if wish_rank != matching_rank:
+                                answer_from_other_plr = questionary.select(
+                                        f"Select a card to give for matching card rank: {wish_card}",
+                                        selected_plr_class.plr_cards
+                                ).ask()
+
+                                matching_rank: str = emoji.replace_emoji(
+                                        answer_from_other_plr,
+                                        ""
+                                )
+
+                                if wish_rank == matching_rank:
+                                    print(f"{selected_plr_name} gave you: {answer_from_other_plr}")
+                                    plr.capture_to_hand([answer_from_other_plr])
+                                    break
